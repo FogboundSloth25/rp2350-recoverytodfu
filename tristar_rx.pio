@@ -1,0 +1,53 @@
+program tristar_rx
+.side_set 1 opt
+
+receive:
+    SET PINDIRS 0 side 0
+    MOV ISR NULL
+
+receive_next_byte:
+    MOV ISR NULL
+    SET X 7
+
+data_loop:
+    WAIT 0 PIN 0 side 1 [5]
+    IN PINS 1 side 0 [7]
+    NOP
+    JMP PIN continue_receive
+    WAIT 1 PIN 0 side 1
+    NOP
+    JMP receive_next_byte side 0
+
+continue_receive:
+    WAIT 1 PIN 0 side 1
+    JMP X-- data_loop side 0
+
+    PUSH NOBLOCK
+    JMP receive_next_byte
+
+% c-sdk {
+static inline pio_sm_config tristar_rx_program_init(
+    PIO pio, uint sm, uint offset, uint pin, uint oe_pin, float clkdiv) {
+
+    pio_sm_set_pins_with_mask(pio, sm, 0u, 1u << pin);
+    pio_sm_set_pindirs_with_mask(pio, sm, 0u, 1u << pin);
+
+    pio_gpio_init(pio, pin);
+    pio_gpio_init(pio, oe_pin);
+
+    pio_sm_config c = tristar_rx_program_get_default_config(offset);
+    sm_config_set_set_pins(&c, pin, 1);
+    sm_config_set_in_pins(&c, pin);
+    sm_config_set_jmp_pin(&c, pin);
+    sm_config_set_sideset_pins(&c, oe_pin);
+
+    sm_config_set_in_shift(&c, false, false, 32);
+    sm_config_set_out_shift(&c, true, false, 32);
+    sm_config_set_clkdiv(&c, clkdiv);
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+
+    return c;
+}
+%}
