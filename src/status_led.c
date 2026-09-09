@@ -31,10 +31,12 @@ void recovery_led_set_rgb(uint8_t r, uint8_t g, uint8_t b) {
      */
     colored_status_led_set_state(false);
 
+    /* Waveshare swaps the physical red/green channels. This mirrors
+     * usbliter8's LED_RED_GREEN_SWAPPED board fix. */
     colored_status_led_set_on_with_color(
         PICO_COLORED_STATUS_LED_COLOR_FROM_RGB(
-            LED_50(r),
             LED_50(g),
+            LED_50(r),
             LED_50(b)
         )
     );
