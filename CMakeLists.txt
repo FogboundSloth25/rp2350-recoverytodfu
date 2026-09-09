@@ -18,7 +18,11 @@ add_executable(rp2350_recovery
   bus.c
   src/device_probe.c
 )
-target_include_directories(rp2350_recovery PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(rp2350_recovery PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${CMAKE_CURRENT_LIST_DIR}/include
+  ${CMAKE_CURRENT_LIST_DIR}/pio_usb/src
+)
 
 target_compile_definitions(rp2350_recovery PRIVATE PICO_STACK_SIZE=0x1000)
 pico_enable_stdio_uart(rp2350_recovery 0)
