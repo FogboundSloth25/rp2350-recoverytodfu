@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "device_probe.h"
 #include "bus.h"
 #include "usb_definitions.h"
 typedef struct {
