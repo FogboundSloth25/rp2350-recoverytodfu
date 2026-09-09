@@ -26,6 +26,7 @@ void recovery_sm_apple_device(uint16_t vid, uint16_t pid, uint8_t address) {
         state = RP2350_REC_IDENTIFY_TARGET;
         printf("[sm] IDENTIFY_TARGET\n");
         state = RP2350_REC_TRANSITION_PENDING;
+        recovery_led_transition();
         printf("[sm] TRANSITION_PENDING\n");
         state = RP2350_REC_WAIT_FOR_DFU;
         printf("[sm] WAIT_FOR_DFU\n");
