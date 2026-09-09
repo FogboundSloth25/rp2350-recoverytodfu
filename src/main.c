@@ -78,7 +78,6 @@ int main(void) {
         }
 
         while (true) {
-            bus_timed_wait_disconnect:
             if (!PIO_USB_ROOT_PORT(0)->connected) {
                 recovery_sm_device_removed();
                 break;
