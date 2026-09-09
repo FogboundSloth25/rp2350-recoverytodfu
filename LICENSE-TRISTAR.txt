@@ -1,0 +1,9 @@
+Tristar auto-DFU implementation is derived from the public Tamarin firmware's Lightning/Tristar protocol handling.
+
+Original project:
+https://github.com/stacksmashing/tamarin-firmware
+
+The Tamarin firmware is GPLv3. This derived component should remain GPLv3-compatible and retain attribution to the original authors.
+
+The protocol sequence implemented here is documented by ElcomSoft:
+https://blog.elcomsoft.com/2023/04/automating-dfu-mode-with-raspberry-pi-pico/
