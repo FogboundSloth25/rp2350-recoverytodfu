@@ -1,5 +1,4 @@
 #pragma once
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -9,6 +8,12 @@
 
 #ifndef TRISTAR_OE_PIN
 #define TRISTAR_OE_PIN 19
+#endif
+
+#if defined(PICO_RP2350)
+#define TRISTAR_PIO_INSTANCE pio2
+#else
+#define TRISTAR_PIO_INSTANCE pio1
 #endif
 
 void tristar_init(void);
