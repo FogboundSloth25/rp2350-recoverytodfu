@@ -18,7 +18,7 @@ enum tristar_state {
     TRISTAR_COMPLETE
 };
 
-static PIO tristar_pio = pio1;
+static PIO tristar_pio = TRISTAR_PIO_INSTANCE;
 static uint tristar_sm = 0;
 static enum tristar_state tristar_state_value = TRISTAR_COLLECT_FIRST_POLL;
 
@@ -179,6 +179,7 @@ static void send_dfu_response(void) {
     transition_active = false;
     dfu_requested = true;
     tristar_state_value = TRISTAR_COMPLETE;
+    recovery_led_dfu();
 
     printf("[tristar] DFU request sent; waiting for Apple DFU re-enumeration\n");
 }
