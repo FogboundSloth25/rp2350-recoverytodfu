@@ -14,6 +14,9 @@ add_executable(rp2350_recovery
   src/state_machine.c
   src/apple_usb.c
   src/status_led.c
+  usb.c
+  bus.c
+  src/device_probe.c
 )
 target_include_directories(rp2350_recovery PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
 
