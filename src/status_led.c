@@ -1,4 +1,5 @@
 #include "status_led.h"
+#include <stdbool.h>
 #include "pico/status_led.h"
 
 static bool ready;
