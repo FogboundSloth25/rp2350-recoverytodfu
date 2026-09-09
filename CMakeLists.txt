@@ -12,6 +12,8 @@ if(NOT DEFINED BOARD_NAME)
 endif()
 pico_sdk_init()
 
+target_include_directories(rp2350_recovery PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+
 add_executable(rp2350_recovery
   src/main.c
   src/state_machine.c
