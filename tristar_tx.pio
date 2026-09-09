@@ -1,0 +1,52 @@
+program tristar_tx
+SET PINS 1
+SET PINDIRS 1
+
+send:
+    PULL
+    SET X, 7
+
+continue_send:
+    OUT Y 1
+    JMP !Y send_zero
+
+send_one:
+    SET PINS 0 [3]
+    SET PINS 1 [11]
+    JMP send_done
+
+send_zero:
+    SET PINS 0 [13]
+    SET PINS 1 [2]
+
+send_done:
+    JMP X-- continue_send
+    NOP [14]
+    PUSH [15]
+
+% c-sdk {
+static inline pio_sm_config tristar_tx_program_init(
+    PIO pio, uint sm, uint offset, uint pin, float clkdiv) {
+
+    pio_sm_set_pins_with_mask(pio, sm, 1u << pin, 1u << pin);
+    pio_sm_set_pindirs_with_mask(pio, sm, 1u << pin, 1u << pin);
+
+    pio_gpio_init(pio, pin);
+
+    pio_sm_config c = tristar_tx_program_get_default_config(offset);
+
+    sm_config_set_out_pins(&c, pin, 1);
+    sm_config_set_set_pins(&c, pin, 1);
+    sm_config_set_in_pins(&c, pin);
+    sm_config_set_jmp_pin(&c, pin);
+
+    sm_config_set_in_shift(&c, false, false, 32);
+    sm_config_set_out_shift(&c, true, false, 32);
+    sm_config_set_clkdiv(&c, clkdiv);
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+
+    return c;
+}
+%}
