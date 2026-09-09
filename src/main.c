@@ -8,19 +8,30 @@
 #include "tristar.h"
 #include "pio_usb_ll.h"
 
-static void check_usb_result(bool *processed) {
+static bool usb_checked = false;
+static bool last_usb_connected = false;
+
+static void probe_usb_device(void) {
     root_port_t *root = PIO_USB_ROOT_PORT(0);
 
-    if (!root->initialized || !root->connected || *processed) {
+    if (!root->initialized || !root->connected || usb_checked) {
         return;
     }
 
-    printf("[usb] device present on USB-A, probing after bus reset
-");
+    /*
+     * Do not interfere with the Tristar path while it is waiting
+     * for the second poll. Once DFU response has been sent, USB-A
+     * can be used to verify re-enumeration when a data cable is
+     * physically connected.
+     */
+    if (!tristar_dfu_requested()) {
+        return;
+    }
+
+    printf("[usb] device present on USB-A; probing DFU result\n");
 
     if (usb_bus_reset_open_ep0() != 0) {
-        printf("[usb] EP0 reset/open failed
-");
+        printf("[usb] EP0 reset/open failed\n");
         return;
     }
 
@@ -28,49 +39,24 @@ static void check_usb_result(bool *processed) {
     int rc = probe_device(&probe);
 
     if (rc != 0) {
-        printf("[usb] device probe failed: %d
-", rc);
+        printf("[usb] device probe failed: %d\n", rc);
         return;
     }
 
-    *processed = true;
+    usb_checked = true;
 
-    if (probe.vid == 0x05AC &&
-        probe.pid >= 0x1280 &&
-        probe.pid <= 0x1283) {
+    printf(
+        "[usb] VID=%04x PID=%04x bcdDevice=%04x\n",
+        probe.vid,
+        probe.pid,
+        probe.bcd_device
+    );
 
-        recovery_led_detected();
-        recovery_sm_apple_device(probe.vid, probe.pid, 0);
-
-        printf(
-            "[usb] Apple Recovery detected: VID=%04x PID=%04x
-",
-            probe.vid,
-            probe.pid
-        );
-
-    } else if (probe.vid == 0x05AC &&
-               probe.pid == 0x1227) {
-
+    if (probe.vid == 0x05AC && probe.pid == 0x1227) {
         recovery_led_dfu();
-
-        printf(
-            "[usb] Apple DFU detected: VID=%04x PID=%04x
-",
-            probe.vid,
-            probe.pid
-        );
-
+        printf("[usb] Apple DFU confirmed (05ac:1227)\n");
     } else {
-
-        printf(
-            "[usb] non-Apple device: VID=%04x PID=%04x
-",
-            probe.vid,
-            probe.pid
-        );
-
-        recovery_led_waiting();
+        printf("[usb] DFU was not confirmed by USB enumeration\n");
     }
 }
 
@@ -92,47 +78,44 @@ int main(void) {
     recovery_sm_init();
 
     /*
-     * Tristar uses PIO1 on the special Lightning ID/SDQ line.
-     * It runs independently from the PIO-USB host on PIO0.
+     * Tristar runs on a dedicated PIO instance so it cannot
+     * collide with the WS2812 status LED or PIO-USB.
      */
     tristar_init();
 
     /*
-     * PIO-USB host is kept for USB-A detection and final DFU
-     * re-enumeration. Tristar itself does not require USB data.
+     * PIO-USB is optional during the Tristar transition.
+     * It is retained for USB-side detection/verification.
      */
     sleep_ms(2000);
 
     usb_start();
 
     if (usb_bus_init() != 0) {
-        printf("[usb] failed to initialize PIO-USB core1 transport
-");
+        printf(
+            "[usb] PIO-USB initialization failed; "
+            "Tristar can still operate\n"
+        );
     } else {
-        printf("[usb] PIO-USB host transport initialized
-");
+        printf("[usb] PIO-USB host transport initialized\n");
+        printf(
+            "[usb] D+=GP%d D-=GP%d\n",
+            PIO_USB_DP_PIN_DEFAULT,
+            PIO_USB_DP_PIN_DEFAULT + 1
+        );
     }
 
     printf(
-        "[usb] D+=GP%d D-=GP%d
-",
-        PIO_USB_DP_PIN_DEFAULT,
-        PIO_USB_DP_PIN_DEFAULT + 1
+        "[tristar] auto-DFU enabled: ID/SDQ=GP%d OE=GP%d\n",
+        TRISTAR_PIN,
+        TRISTAR_OE_PIN
     );
-
-    printf(
-        "[tristar] auto-DFU enabled on GP%d
-",
-        TRISTAR_PIN
-    );
-
-    bool usb_processed = false;
-    bool last_usb_connected = false;
 
     while (true) {
         /*
-         * This must run continuously: the Tristar request can
-         * arrive at any time while the phone is in Recovery.
+         * Critical: keep servicing Tristar continuously.
+         * The automatic DFU protocol is independent of USB
+         * enumeration.
          */
         tristar_task();
 
@@ -140,28 +123,19 @@ int main(void) {
 
         if (root->initialized && root->connected) {
             if (!last_usb_connected) {
-                usb_processed = false;
+                usb_checked = false;
                 last_usb_connected = true;
-                printf("[usb] USB-A device connected
-");
+                printf("[usb] USB-A device connected\n");
             }
 
-            /*
-             * Only probe when a Tristar transition has completed
-             * or when a device is independently connected in DFU.
-             */
-            if (tristar_dfu_requested() || !tristar_transition_active()) {
-                check_usb_result(&usb_processed);
-            }
-
+            probe_usb_device();
         } else {
             if (last_usb_connected) {
-                printf("[usb] USB-A device disconnected
-");
+                printf("[usb] USB-A device disconnected\n");
             }
 
             last_usb_connected = false;
-            usb_processed = false;
+            usb_checked = false;
         }
 
         sleep_ms(1);
