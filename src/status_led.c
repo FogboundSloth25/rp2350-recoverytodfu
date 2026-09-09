@@ -53,3 +53,7 @@ void recovery_led_detected(void) {
 void recovery_led_dfu(void) {
     recovery_led_set_rgb(0, 255, 40);
 }
+
+void recovery_led_transition(void) {
+    recovery_led_set_rgb(255, 255, 0);
+}
