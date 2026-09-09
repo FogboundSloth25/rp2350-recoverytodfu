@@ -17,6 +17,7 @@ add_executable(rp2350_recovery
   usb.c
   bus.c
   src/device_probe.c
+  tristar.c
 )
 target_include_directories(rp2350_recovery PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
