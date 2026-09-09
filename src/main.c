@@ -6,6 +6,7 @@
 #include "pico/stdlib.h"
 #include "hardware/clocks.h"
 #include "pio_usb.h"
+#include "pio_usb_ll.h"
 #include "usb_definitions.h"
 
 #include "state_machine.h"
