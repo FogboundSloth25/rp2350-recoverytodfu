@@ -39,4 +39,7 @@ target_link_libraries(rp2350_recovery
   hardware_pio
   hardware_dma
 )
+pico_generate_pio_header(rp2350_recovery ${CMAKE_CURRENT_LIST_DIR}/tristar_rx.pio)
+pico_generate_pio_header(rp2350_recovery ${CMAKE_CURRENT_LIST_DIR}/tristar_tx.pio)
+
 pico_add_extra_outputs(rp2350_recovery)
